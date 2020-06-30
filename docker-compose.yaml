@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  unrealircd:
+    container_name: unrealircd
+    image: agamemnon/unrealircd:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - unrealircd-conf:/unrealircd/conf
+      - unrealircd-data:/unrealircd/data
+    networks:
+      - unrealircd
+    ports:
+      - "6697:6697/tcp"
+      - "6900:6900/tcp"
+    logging:
+      driver: syslog
+      options:
+        tag: "unrealircd"
+    restart: unless-stopped
+
+volumes:
+  unrealircd-conf:
+    name: unrealircd-conf
+  unrealircd-data:
+    name: unrealircd-data
+
+networks:
+  unrealircd:
+    name: unrealircd

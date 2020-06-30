@@ -1,0 +1,36 @@
+#!/bin/bash
+
+CONFIG="$@"
+VOLUME="unrealircd-conf"
+CONTAINER="unrealircd"
+
+usage() {
+  echo "Usage: ./installconfig <path_to_unrealircd.conf>"
+  exit 1
+}
+
+if [ "$#" -eq 0 ]; then
+    echo "Error: No configuration file supplied."
+    usage
+elif [ ! -f "$CONFIG" ]; then
+    echo "Error: Config file '$CONFIG' not found."
+    usage
+elif [ ! "$( docker volume inspect -f '{{.Name}}' $VOLUME 2>/dev/null )" == "$VOLUME" ]; then
+    echo "Error: Volume '$VOLUME' not found."
+    usage
+elif [ "$( docker container inspect -f '{{.State.Running}}' $CONTAINER 2>/dev/null )" == "true" ]; then
+    echo "Error: Container '$CONTAINER' is running."
+    usage
+else
+    docker run --rm \
+                -i \
+                -t \
+                -v `pwd`:/config \
+                -v "$VOLUME":/conf \
+                -w /conf \
+                debian \
+                /bin/sh -c "\
+                /bin/cp "/config/$CONFIG" unrealircd.conf && \
+                chown 999:999 unrealircd.conf"
+    echo "Success! Configuration '$CONFIG' has been copied into '$VOLUME'."
+fi

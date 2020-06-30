@@ -1,0 +1,46 @@
+#!/bin/bash
+
+HOSTNAME="$@"
+LETSENCRYPT="/etc/letsencrypt"
+CERT="$LETSENCRYPT/live/$HOSTNAME/fullchain.pem"
+PRIVKEY="$LETSENCRYPT/live/$HOSTNAME/privkey.pem"
+VOLUME="unrealircd-conf"
+CONTAINER="unrealircd"
+
+usage() {
+  echo "Usage: sudo ./installcert <fqdn>"
+  exit 1
+}
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root."
+    usage
+elif [ "$#" -eq 0 ]; then
+    echo "Error: No FQDN supplied."
+    usage
+elif [ ! -f "$CERT" ]; then
+    echo "Error: Certificate '$CERT' not found."
+    usage
+elif [ ! -f "$PRIVKEY" ]; then
+    echo "Error: Private key '$PRIVKEY' not found."
+    usage
+elif [ ! "$( docker volume inspect -f '{{.Name}}' $VOLUME 2>/dev/null )" == "$VOLUME" ]; then
+    echo "Error: Volume '$VOLUME' not found."
+    usage
+elif [ "$( docker container inspect -f '{{.State.Running}}' $CONTAINER 2>/dev/null )" == "true" ]; then
+    echo "Error: Container '$CONTAINER' is running."
+    usage
+else
+    docker run --rm \
+                -i \
+                -t \
+                -v "$LETSENCRYPT":/letsencrypt \
+                -v "$VOLUME":/conf \
+                -w /conf/tls \
+                debian \
+                /bin/sh -c "\
+                /bin/cp -L /letsencrypt/live/$HOSTNAME/fullchain.pem server.cert.pem && \
+                /bin/cp -L /letsencrypt/live/$HOSTNAME/privkey.pem server.key.pem && \
+                chown 999:999 *.pem"
+    echo "Success! Certificate and private key have been copied into '$VOLUME'."
+fi
