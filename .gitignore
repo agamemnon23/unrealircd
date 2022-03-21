@@ -1,0 +1,5 @@
+/config/unrealircd.conf
+/config/irc.motd
+/config/tls/server.cert.pem
+/config/tls/server.key.pem
+/data

@@ -1,0 +1,27 @@
+version: "3.8"
+
+services: 
+  unrealircd:
+    container_name: unrealircd
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agamemnon23/unrealircd:latest
+    volumes:
+      - ./config:/unrealircd/conf
+      - ./data:/unrealircd/data
+    networks:
+      - unrealircd
+    ports:
+      - 6667:6667/tcp
+      - 6697:6697/tcp
+      - 6900:6900/tcp
+    logging:
+      driver: syslog
+      options:
+        tag: "unrealircd"
+    restart: unless-stopped
+
+networks:
+  unrealircd:
+    name: unrealircd
